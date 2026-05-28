@@ -20,13 +20,18 @@
 
 ---
 
-## :dart: Why I built this
+<p align="center">
+  <img src="docs/preview.png" alt="Dashboard preview" width="900">
+</p>
+
+
+## Why I built this
 
 Most regression tutorials use US housing datasets. I wanted one that reflected **my own market**, so I built a Harare property price model from scratch: 17 real suburbs from Borrowdale and Glen Lorne down to Mufakose and Budiriro, with the features that actually move the needle here — borehole, solar backup, walled yard, plot size, and distance to the CBD.
 
 The dataset is synthetic but the **structure is real**: pricing tiers reflect 2024–2025 USD asking prices, and feature effects (a borehole adds ~5% to the price, solar adds ~4%) are calibrated to what listings actually show.
 
-## :sparkles: At a glance
+## At a glance
 
 |  |  |
 |---|---|
@@ -37,7 +42,7 @@ The dataset is synthetic but the **structure is real**: pricing tiers reflect 20
 | **Results** | R² **0.88**, RMSE around **$25k** on the held-out test set |
 | **Stack** | scikit-learn · pandas · Streamlit · Plotly |
 
-## :wrench: How I approached it
+## How I approached it
 
 1. **Generated 5,000 listings** across 17 suburbs with realistic price tiers and amenity distributions.
 2. **EDA** — distributions by suburb, the price gap between premium and township tiers, and which amenities matter most.
@@ -46,13 +51,13 @@ The dataset is synthetic but the **structure is real**: pricing tiers reflect 20
 5. **Stacked ensemble** — RF + GBR with a Ridge meta-learner.
 6. **Interpretation** — permutation importance to see which features really drive price.
 
-## :bar_chart: What I found
+## What I found
 
 - **Suburb dominates everything.** Borrowdale is ~10× more expensive than Budiriro at similar floor sizes. Location is doing real work.
 - **Borehole adds ~5%, solar adds ~4%** to the median price. With routine load-shedding and water shortages, these aren't luxuries — they're insurance, and buyers pay for them.
 - **Distance to CBD is not a clean linear signal**: premium suburbs and townships sit at similar distances. What matters is *which side* of the city, not how far.
 
-## :computer: Run it yourself
+## Run it yourself
 
 ```bash
 pip install -r requirements.txt
@@ -62,14 +67,14 @@ streamlit run dashboard.py
 
 The notebook generates `data/harare_listings.csv` on first run — no external download.
 
-## :tv: Interactive dashboard
+## Interactive dashboard
 
 Three tabs:
 - **Map of Harare** — every listing plotted at its real latitude/longitude, coloured by price. Filter by tier and the geographic story jumps out.
 - **What drives price?** — boxplot of price by suburb (sorted), and the percentage uplift each amenity adds.
 - **Price my house** — pick a suburb, set the features, get a live price + comparison to the suburb's median.
 
-## :rocket: What I'd do next
+## What I'd do next
 
 - Scrape actual listings from Property.co.zw and re-train on real data.
 - Add proximity to schools, shopping centres, arterial roads.

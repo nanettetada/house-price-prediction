@@ -53,61 +53,38 @@ SUBURBS = {
 }
 CBD_LAT, CBD_LON = -17.831, 31.045
 
-st.set_page_config(page_title="Harare House Prices", page_icon=":house:", layout="wide")
+# A calm, professional palette — not the marketing-hero template look.
+INK = "#1f2933"
+MUTED = "#6b7280"
+ACCENT = "#2f7d4f"   # muted Harare green, used sparingly
+PLOT_TEMPLATE = "plotly_white"
 
-st.markdown(
-    """
-    <style>
-    #MainMenu, footer {visibility: hidden;}
-    .hero {
-        background: linear-gradient(135deg, #27AE60 0%, #0F5132 100%);
-        padding: 36px 32px; border-radius: 16px; color: white;
-        margin: -10px 0 24px 0;
-        box-shadow: 0 12px 32px rgba(39, 174, 96, 0.25);
-    }
-    .hero h1 { margin: 0; font-size: 38px; font-weight: 800; letter-spacing: -0.5px; }
-    .hero p  { margin: 8px 0 0 0; font-size: 17px; opacity: 0.92; }
-    .stat {
-        background: white; padding: 22px 24px; border-radius: 14px;
-        box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-        border-top: 4px solid #27AE60; height: 100%;
-    }
-    .stat .label { font-size: 12px; color: #7F8C8D; text-transform: uppercase; letter-spacing: 1px; }
-    .stat .value { font-size: 30px; font-weight: 800; color: #145A32; margin: 4px 0; }
-    .stat .sub   { font-size: 13px; color: #95A5A6; }
-    .insight {
-        background: linear-gradient(180deg, #FFFFFF 0%, #E8F8EF 100%);
-        border-left: 4px solid #27AE60; padding: 18px 22px; border-radius: 10px; margin: 8px 0;
-    }
-    .insight .head { font-size: 12px; color: #27AE60; font-weight: 700; letter-spacing: 1px; }
-    .insight .body { font-size: 16px; color: #145A32; margin-top: 4px; line-height: 1.5; }
-    .action {
-        background: linear-gradient(180deg, #FFFFFF 0%, #FEF5E7 100%);
-        border-left: 4px solid #E67E22; padding: 16px 20px; border-radius: 10px; margin: 8px 0;
-    }
-    .action .head { font-size: 12px; color: #E67E22; font-weight: 700; letter-spacing: 1px; }
-    .action .body { font-size: 15px; color: #6E4D11; margin-top: 4px; line-height: 1.5; }
-    </style>
-
-    <div class="hero">
-      <h1>:house: Harare House Prices</h1>
-      <p>Map the city, see what really drives prices, price a house and check the investment case.</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
+st.set_page_config(
+    page_title="Harare house prices",
+    page_icon="🏠",
+    layout="wide",
+    initial_sidebar_state="collapsed",
 )
 
 
-def big_stat(label, value, sub=""):
-    return f'<div class="stat"><div class="label">{label}</div><div class="value">{value}</div><div class="sub">{sub}</div></div>'
+def note(text: str) -> None:
+    """A quiet analyst's note — sentence-case, no shouting, woven into the page."""
+    st.markdown(
+        f'<div style="border-left:3px solid #d7dbe0; background:#f7f8fa; '
+        f'padding:11px 16px; margin:4px 0 22px 0; color:#3a434d; '
+        f'font-size:15px; line-height:1.6;">{text}</div>',
+        unsafe_allow_html=True,
+    )
 
 
-def insight(head, body):
-    return f'<div class="insight"><div class="head">{head}</div><div class="body">{body}</div></div>'
-
-
-def action(head, body):
-    return f'<div class="action"><div class="head">{head}</div><div class="body">{body}</div></div>'
+def style_fig(fig, height=340):
+    fig.update_layout(
+        template=PLOT_TEMPLATE,
+        height=height,
+        margin=dict(l=10, r=10, t=30, b=10),
+        font=dict(color=INK, size=13),
+    )
+    return fig
 
 
 # --------------------------------------------------------------------------- #
@@ -167,29 +144,52 @@ mean_township = float(df.loc[df["tier"] == "township", "price_usd"].mean())
 gap_x = mean_premium / max(mean_township, 1)
 median_ppsqm = float(df["price_per_sqm"].median())
 
+# --------------------------------------------------------------------------- #
+# Header
+# --------------------------------------------------------------------------- #
+st.markdown(
+    f"""
+    <div style="margin:-6px 0 6px 0;">
+      <div style="font-size:13px; letter-spacing:.8px; color:{MUTED};
+                  text-transform:uppercase;">Harare &middot; residential property</div>
+      <h1 style="margin:2px 0 4px 0; font-size:30px; font-weight:700; color:{INK};">
+        What a house costs across the city</h1>
+      <div style="font-size:16px; color:{MUTED};">
+        Mapping listings, comparing suburbs, and pricing a house — built on
+        location, size and the resilience features Harare buyers pay for.</div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+st.divider()
+
 c1, c2, c3, c4, c5 = st.columns(5)
-c1.markdown(big_stat("Listings", f"{len(df):,}"), unsafe_allow_html=True)
-c2.markdown(big_stat("Median price", f"${median_price:,.0f}"), unsafe_allow_html=True)
-c3.markdown(big_stat("Median $/m²", f"${median_ppsqm:,.0f}"), unsafe_allow_html=True)
-c4.markdown(big_stat("Model R²", f"{metrics['r2']:.3f}",
-                      f"RMSE ${metrics['rmse']:,.0f}"), unsafe_allow_html=True)
-c5.markdown(big_stat("Premium / township gap", f"{gap_x:.1f}×",
-                      f"${mean_premium:,.0f} vs ${mean_township:,.0f}"),
-            unsafe_allow_html=True)
+c1.metric("Listings", f"{len(df):,}")
+c2.metric("Median price", f"${median_price:,.0f}")
+c3.metric("Median $/m²", f"${median_ppsqm:,.0f}")
+c4.metric("Model R²", f"{metrics['r2']:.3f}", f"RMSE ${metrics['rmse']:,.0f}",
+          delta_color="off")
+c5.metric("Premium / township gap", f"{gap_x:.1f}×",
+          f"${mean_premium:,.0f} vs ${mean_township:,.0f}", delta_color="off")
 
+note(
+    f"The whole story of Harare prices is location. A typical premium-suburb house "
+    f"runs about <b>${mean_premium:,.0f}</b>, against <b>${mean_township:,.0f}</b> in "
+    f"the townships — roughly {gap_x:.1f}× the price for what's often a similar amount "
+    f"of brick. The map and suburb comparisons below pull that gap apart, and the "
+    f"predictor lets you price a specific house against its own neighbourhood."
+)
 
-tab_map, tab_suburb, tab_drivers, tab_value, tab_predict = st.tabs([
-    ":world_map: Map of Harare",
-    ":bar_chart: Suburb compare",
-    ":chart_with_upwards_trend: What drives price?",
-    ":moneybag: Best value & yield",
-    ":dart: Price my house",
+tab_market, tab_drivers, tab_price = st.tabs([
+    "The market",
+    "What drives price",
+    "Price a house",
 ])
 
 # --------------------------------------------------------------------------- #
-with tab_map:
-    st.subheader("Every listing, plotted on Harare")
-    st.caption("Yellow = expensive, dark = cheap. Hover for details.")
+with tab_market:
+    st.markdown("#### Every listing, plotted on Harare")
+    st.caption("Lighter points are pricier, darker are cheaper. Hover for details.")
 
     col_f1, col_f2 = st.columns([1, 2])
     with col_f1:
@@ -236,29 +236,18 @@ with tab_map:
         top_suburb = suburb_median.index[0]
         bottom_suburb = suburb_median.index[-1]
         multiplier = suburb_median.iloc[0] / suburb_median.iloc[-1]
-        st.markdown(
-            insight(
-                "WHERE THE MONEY LIVES",
-                f"<b>{top_suburb}</b> (median <b>${suburb_median.iloc[0]:,.0f}</b>) is "
-                f"<b>{multiplier:.1f}×</b> more expensive than <b>{bottom_suburb}</b> "
-                f"(median <b>${suburb_median.iloc[-1]:,.0f}</b>). The north-east of Harare "
-                "concentrates the high end; the southern townships sit at the affordable end.",
-            ),
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            action(
-                "WHAT TO DO WITH THIS",
-                "If you are an investor chasing capital growth, anchor in the north-east. "
-                "If you are chasing rental yield, the south-west delivers a higher rent-to-price ratio — "
-                "lower ticket price, faster payback, but higher tenant turnover.",
-            ),
-            unsafe_allow_html=True,
+        note(
+            f"The high end clusters in the north-east — <b>{top_suburb}</b> sits at a "
+            f"median <b>${suburb_median.iloc[0]:,.0f}</b>, about <b>{multiplier:.1f}×</b> "
+            f"what you'd pay in <b>{bottom_suburb}</b> (<b>${suburb_median.iloc[-1]:,.0f}</b>) "
+            f"in the southern townships. If you're buying for capital growth, the north-east "
+            f"is where it has historically held; if you're after rental yield, the "
+            f"south-west gives a better rent-to-price ratio — cheaper to get into and "
+            f"faster to pay back, though with higher tenant turnover."
         )
 
-# --------------------------------------------------------------------------- #
-with tab_suburb:
-    st.subheader("Compare suburbs head-to-head")
+    # --- Suburb compare -----------------------------------------------------
+    st.markdown("#### Compare suburbs head-to-head")
 
     all_suburbs = sorted(df["suburb"].unique().tolist())
     default_picks = [s for s in ["Borrowdale", "Avondale", "Hatfield", "Glen View"]
@@ -301,20 +290,20 @@ with tab_suburb:
                 color_discrete_map=tier_color,
                 text=agg["median_price"].map(lambda x: f"${x/1000:,.0f}k"),
                 labels={"median_price": "Median price (USD)", "suburb": ""},
+                title="Median listing price by suburb",
             )
-            fig.update_layout(height=380, yaxis_tickformat="$,.0f",
-                              title="Median listing price by suburb")
-            st.plotly_chart(fig, use_container_width=True)
+            fig.update_layout(yaxis_tickformat="$,.0f")
+            st.plotly_chart(style_fig(fig, 380), use_container_width=True)
         with col_b:
             fig = px.bar(
                 agg, x="suburb", y="median_ppsqm", color="tier",
                 color_discrete_map=tier_color,
                 text=agg["median_ppsqm"].map(lambda x: f"${x:,.0f}"),
                 labels={"median_ppsqm": "Median $/m²", "suburb": ""},
+                title="Median price per m² — strips out house size",
             )
-            fig.update_layout(height=380, yaxis_tickformat="$,.0f",
-                              title="Median price per m² — strips out house size")
-            st.plotly_chart(fig, use_container_width=True)
+            fig.update_layout(yaxis_tickformat="$,.0f")
+            st.plotly_chart(style_fig(fig, 380), use_container_width=True)
 
         st.markdown("**Side-by-side stats**")
         display = agg.copy()
@@ -332,101 +321,18 @@ with tab_suburb:
         top_ppsqm = agg.sort_values("median_ppsqm", ascending=False).iloc[0]
         cheap_ppsqm = agg.sort_values("median_ppsqm").iloc[0]
         ratio = top_ppsqm["median_ppsqm"] / max(cheap_ppsqm["median_ppsqm"], 1)
-        st.markdown(
-            insight(
-                "PRICE PER SQUARE METRE TELLS THE TRUTH",
-                f"In your selection, <b>{top_ppsqm['suburb']}</b> trades at "
-                f"<b>${top_ppsqm['median_ppsqm']:,.0f}/m²</b> vs "
-                f"<b>{cheap_ppsqm['suburb']}</b> at <b>${cheap_ppsqm['median_ppsqm']:,.0f}/m²</b> — "
-                f"a <b>{ratio:.1f}×</b> spread. Headline price hides house size; $/m² makes the "
-                "premium for location explicit and is the metric to negotiate on.",
-            ),
-            unsafe_allow_html=True,
+        note(
+            f"Price per square metre is the honest number to compare on — it strips out "
+            f"house size. In your selection, <b>{top_ppsqm['suburb']}</b> trades at "
+            f"<b>${top_ppsqm['median_ppsqm']:,.0f}/m²</b> against "
+            f"<b>{cheap_ppsqm['suburb']}</b> at <b>${cheap_ppsqm['median_ppsqm']:,.0f}/m²</b>, "
+            f"a <b>{ratio:.1f}×</b> spread that is almost entirely about location. It's also "
+            f"the figure worth negotiating on."
         )
 
-# --------------------------------------------------------------------------- #
-with tab_drivers:
-    st.subheader("Price by suburb")
-    order = df.groupby("suburb")["price_usd"].median().sort_values().index
-    fig = px.box(
-        df, x="price_usd", y="suburb", color="tier",
-        category_orders={"suburb": order.tolist()},
-        color_discrete_map={
-            "premium": "#27AE60", "upper-mid": "#3498DB",
-            "middle": "#F39C12", "township": "#95A5A6",
-        },
-        labels={"price_usd": "Price (USD)", "suburb": ""},
-    )
-    fig.update_layout(height=580, xaxis_tickformat="$,.0f")
-    st.plotly_chart(fig, use_container_width=True)
-
-    st.markdown("#### Amenities that lift the price")
-    feat_effects = []
-    for col, label in [("has_borehole", "Borehole"), ("has_solar", "Solar backup"),
-                        ("has_pool", "Pool"), ("walled", "Walled / secured")]:
-        with_it = df[df[col] == 1]["price_usd"].median()
-        without = df[df[col] == 0]["price_usd"].median()
-        if without > 0:
-            uplift = (with_it - without) / without * 100
-            feat_effects.append({"feature": label, "with": with_it, "without": without, "uplift_%": uplift})
-    eff = pd.DataFrame(feat_effects).sort_values("uplift_%", ascending=True)
-
-    fig = px.bar(
-        eff, x="uplift_%", y="feature", orientation="h",
-        color="uplift_%", color_continuous_scale="Greens",
-        text=eff["uplift_%"].map(lambda x: f"+{x:.0f}%"),
-        labels={"uplift_%": "Median uplift vs houses without"},
-    )
-    fig.update_layout(coloraxis_showscale=False, height=320)
-    st.plotly_chart(fig, use_container_width=True)
-
-    borehole_uplift = next((e["uplift_%"] for e in feat_effects if e["feature"] == "Borehole"), 0)
-    solar_uplift = next((e["uplift_%"] for e in feat_effects if e["feature"] == "Solar backup"), 0)
-    st.markdown(
-        insight(
-            "ZIMBABWEAN PREMIUMS",
-            f"A <b>borehole</b> lifts the median price by <b>+{borehole_uplift:.0f}%</b>, "
-            f"a <b>solar backup</b> by <b>+{solar_uplift:.0f}%</b>. With load-shedding and "
-            "water shortages routine, these aren't luxuries — they're insurance, and buyers pay for them.",
-        ),
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        action(
-            "WHAT TO DO WITH THIS",
-            "If you are renovating to sell, prioritise drilling a borehole and adding a solar inverter "
-            "before cosmetic finishes — the data says the market pays for resilience, not for paint.",
-        ),
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("#### Size vs price — the relationship")
-    fig = px.scatter(
-        df.sample(min(2000, len(df)), random_state=RNG),
-        x="size_sqm", y="price_usd", color="tier",
-        color_discrete_map={
-            "premium": "#27AE60", "upper-mid": "#3498DB",
-            "middle": "#F39C12", "township": "#95A5A6",
-        },
-        opacity=0.55, trendline="ols",
-        labels={"size_sqm": "House size (m²)", "price_usd": "Price (USD)"},
-    )
-    fig.update_layout(height=420, yaxis_tickformat="$,.0f")
-    st.plotly_chart(fig, use_container_width=True)
-    st.markdown(
-        insight(
-            "SIZE EXPLAINS PART OF IT — NOT ALL OF IT",
-            "Within the same tier, bigger houses sell for more (predictably). But the gap "
-            "<i>between</i> tiers at the same size is large — a 200m² house in a premium suburb "
-            "outsells the same 200m² house in a township several times over. <b>Location is "
-            "the dominant variable</b>, size is the secondary one.",
-        ),
-        unsafe_allow_html=True,
-    )
-
-# --------------------------------------------------------------------------- #
-with tab_value:
-    st.subheader("Investment view — yield and best value")
+    # --- Best value & yield -------------------------------------------------
+    st.divider()
+    st.markdown("#### Investment view — yield and best value")
 
     st.markdown("##### Rental yield calculator")
     st.caption(
@@ -449,28 +355,31 @@ with tab_value:
     payback = calc_price / max(net_rent, 1)
 
     yc1, yc2, yc3 = st.columns(3)
-    yc1.markdown(big_stat("Gross yield", f"{gross_yield:.2f}%",
-                          f"${annual_rent:,.0f} rent/yr"), unsafe_allow_html=True)
-    yc2.markdown(big_stat("Net yield", f"{net_yield:.2f}%",
-                          f"after {calc_costs}% costs"), unsafe_allow_html=True)
-    yc3.markdown(big_stat("Cash payback", f"{payback:.1f} yrs",
-                          "ignoring capital growth"), unsafe_allow_html=True)
+    yc1.metric("Gross yield", f"{gross_yield:.2f}%", f"${annual_rent:,.0f} rent/yr",
+               delta_color="off")
+    yc2.metric("Net yield", f"{net_yield:.2f}%", f"after {calc_costs}% costs",
+               delta_color="off")
+    yc3.metric("Cash payback", f"{payback:.1f} yrs", "ignoring capital growth",
+               delta_color="off")
 
     if net_yield >= 7:
-        verdict = ("STRONG CASH-FLOW DEAL",
-                   f"At <b>{net_yield:.1f}%</b> net yield this comfortably beats the Harare median. "
-                   "Hold for cash, refinance for the next purchase.")
+        verdict = (
+            f"At <b>{net_yield:.1f}%</b> net yield this comfortably beats the Harare median — "
+            "a strong cash-flow buy. The sensible play is to hold it for the rent and "
+            "refinance into the next purchase."
+        )
     elif net_yield >= 5:
-        verdict = ("FAIR — TYPICAL HARARE YIELD",
-                   f"<b>{net_yield:.1f}%</b> net is in line with the wider market. The investment case "
-                   "depends on expected capital growth — is the suburb gentrifying?")
+        verdict = (
+            f"A net yield of <b>{net_yield:.1f}%</b> is about typical for Harare. Whether it's "
+            "a good buy comes down to capital growth — is the suburb gentrifying, or flat?"
+        )
     else:
-        verdict = ("WEAK CASH YIELD",
-                   f"At <b>{net_yield:.1f}%</b> net you are buying for capital growth, not rent. "
-                   "Only worth it if you have a strong reason to believe prices rise from here.")
-    st.markdown(insight(verdict[0], verdict[1]), unsafe_allow_html=True)
+        verdict = (
+            f"At <b>{net_yield:.1f}%</b> net you're really buying for capital growth, not rent. "
+            "Only worth it if you have a genuine reason to think prices climb from here."
+        )
+    note(verdict)
 
-    st.markdown("---")
     st.markdown("##### Estimated rent landscape across Harare")
     rent_by_tier = df.groupby("tier").agg(
         median_price=("price_usd", "median"),
@@ -486,8 +395,7 @@ with tab_value:
     })
     st.dataframe(rent_by_tier, use_container_width=True, hide_index=True)
 
-    st.markdown("---")
-    st.markdown("##### :gem: Best-value listings — under-priced for their suburb")
+    st.markdown("##### Best-value listings — under-priced for their suburb")
     st.caption("Properties priced 10%+ below the median for their own suburb, ranked by discount.")
 
     discount_threshold = st.slider("Minimum discount vs suburb median (%)", 5, 40, 15)
@@ -511,28 +419,86 @@ with tab_value:
             "est_monthly_rent_usd": "Est. rent/mo",
         })
         st.dataframe(display_bv, use_container_width=True, hide_index=True)
-        st.markdown(
-            insight(
-                "WHY THIS LIST MATTERS",
-                f"These {len(bv)} listings are priced materially below the median for their own suburb. "
-                "Some will have hidden defects (the reason for the discount), but some are genuine "
-                "mispricings — old listings, motivated sellers, or stale agents. "
-                "<b>This is your viewing shortlist.</b>",
-            ),
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            action(
-                "NEXT STEP FOR AN INVESTOR",
-                "View the top 5. For each, confirm: (1) clean title deed, (2) no structural issues, "
-                "(3) realistic rent matches the estimate above. If yes on all three, you have an offer to make.",
-            ),
-            unsafe_allow_html=True,
+        note(
+            f"These {len(bv)} listings are priced well below the median for their own "
+            f"suburb. Some will be cheap for a reason — hidden defects — but others are "
+            f"genuine mispricings: stale listings, motivated sellers, agents who haven't "
+            f"refreshed the price. It's a sensible viewing shortlist. For the top few, "
+            f"check the title deed is clean, there are no structural issues, and the rent "
+            f"you'd actually get matches the estimate above. If all three hold, you have "
+            f"an offer to make."
         )
 
 # --------------------------------------------------------------------------- #
-with tab_predict:
-    st.subheader("Price a house in a Harare suburb")
+with tab_drivers:
+    st.markdown("#### Price by suburb")
+    order = df.groupby("suburb")["price_usd"].median().sort_values().index
+    fig = px.box(
+        df, x="price_usd", y="suburb", color="tier",
+        category_orders={"suburb": order.tolist()},
+        color_discrete_map={
+            "premium": ACCENT, "upper-mid": "#5b8aa6",
+            "middle": "#c98a3a", "township": "#8a929b",
+        },
+        labels={"price_usd": "Price (USD)", "suburb": ""},
+    )
+    fig.update_layout(xaxis_tickformat="$,.0f")
+    st.plotly_chart(style_fig(fig, 580), use_container_width=True)
+
+    st.markdown("#### Amenities that lift the price")
+    feat_effects = []
+    for col, label in [("has_borehole", "Borehole"), ("has_solar", "Solar backup"),
+                        ("has_pool", "Pool"), ("walled", "Walled / secured")]:
+        with_it = df[df[col] == 1]["price_usd"].median()
+        without = df[df[col] == 0]["price_usd"].median()
+        if without > 0:
+            uplift = (with_it - without) / without * 100
+            feat_effects.append({"feature": label, "with": with_it, "without": without, "uplift_%": uplift})
+    eff = pd.DataFrame(feat_effects).sort_values("uplift_%", ascending=True)
+
+    fig = px.bar(
+        eff, x="uplift_%", y="feature", orientation="h",
+        color="uplift_%", color_continuous_scale="Greens",
+        text=eff["uplift_%"].map(lambda x: f"+{x:.0f}%"),
+        labels={"uplift_%": "Median uplift vs houses without"},
+    )
+    fig.update_layout(coloraxis_showscale=False)
+    st.plotly_chart(style_fig(fig, 320), use_container_width=True)
+
+    borehole_uplift = next((e["uplift_%"] for e in feat_effects if e["feature"] == "Borehole"), 0)
+    solar_uplift = next((e["uplift_%"] for e in feat_effects if e["feature"] == "Solar backup"), 0)
+    note(
+        f"The amenities that move price most are the ones that solve Zimbabwe's everyday "
+        f"problems. A borehole adds about <b>+{borehole_uplift:.0f}%</b> to the median, a "
+        f"solar backup roughly <b>+{solar_uplift:.0f}%</b>. With load-shedding and water "
+        f"cuts routine, these read less as luxuries and more as insurance — and buyers pay "
+        f"for them. If you're renovating to sell, drilling a borehole and fitting a solar "
+        f"inverter does more for the price than cosmetic finishes do."
+    )
+
+    st.markdown("#### Size vs price")
+    fig = px.scatter(
+        df.sample(min(2000, len(df)), random_state=RNG),
+        x="size_sqm", y="price_usd", color="tier",
+        color_discrete_map={
+            "premium": ACCENT, "upper-mid": "#5b8aa6",
+            "middle": "#c98a3a", "township": "#8a929b",
+        },
+        opacity=0.55, trendline="ols",
+        labels={"size_sqm": "House size (m²)", "price_usd": "Price (USD)"},
+    )
+    fig.update_layout(yaxis_tickformat="$,.0f")
+    st.plotly_chart(style_fig(fig, 420), use_container_width=True)
+    note(
+        "Within a tier, bigger houses cost more, as you'd expect. But the gap between "
+        "tiers at the same size is the bigger story — a 200m² house in a premium suburb "
+        "outsells the same 200m² house in a township several times over. Location is the "
+        "dominant variable here; size is secondary."
+    )
+
+# --------------------------------------------------------------------------- #
+with tab_price:
+    st.markdown("#### Price a house in a Harare suburb")
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -574,9 +540,9 @@ with tab_predict:
     pred_ppsqm = pred / max(size_sqm, 1)
     suburb_ppsqm = float(df[df["suburb"] == suburb]["price_per_sqm"].median())
 
-    st.markdown(f"### Predicted listing price")
+    st.markdown("##### Predicted listing price")
     st.markdown(
-        f"<div style='font-size:64px; font-weight:800; color:#27AE60; margin: -10px 0;'>${pred:,.0f}</div>",
+        f"<div style='font-size:56px; font-weight:700; color:{INK}; margin: -6px 0;'>${pred:,.0f}</div>",
         unsafe_allow_html=True,
     )
     st.caption(
@@ -592,54 +558,43 @@ with tab_predict:
         gauge={
             "shape": "bullet",
             "axis": {"range": [0, max(pred, suburb_median_price) * 1.4]},
-            "bar": {"color": "#27AE60"},
+            "bar": {"color": ACCENT},
             "threshold": {
-                "line": {"color": "#1B4F72", "width": 3},
+                "line": {"color": INK, "width": 3},
                 "thickness": 0.85,
                 "value": suburb_median_price,
             },
-            "steps": [{"range": [0, suburb_median_price], "color": "#E8F8EF"}],
+            "steps": [{"range": [0, suburb_median_price], "color": "#eef4f0"}],
         },
         title={"text": f"vs {suburb} median (dark line)"},
     ))
-    fig.update_layout(height=130, margin=dict(l=10, r=10, t=10, b=10))
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(style_fig(fig, 130), use_container_width=True)
 
     # Investment quick-take using the predicted price
     yield_assumed = YIELD_BY_TIER.get(tier, 0.07)
     est_rent = pred * yield_assumed / 12
     st.markdown("##### Investment quick-take")
     qc1, qc2, qc3 = st.columns(3)
-    qc1.markdown(big_stat("Est. monthly rent", f"${est_rent:,.0f}",
-                          f"at {yield_assumed*100:.1f}% gross yield"), unsafe_allow_html=True)
-    qc2.markdown(big_stat("Annual gross rent", f"${est_rent*12:,.0f}"), unsafe_allow_html=True)
-    qc3.markdown(big_stat("Cash payback", f"{(pred / max(est_rent*12*0.8, 1)):.1f} yrs",
-                          "net of 20% costs"), unsafe_allow_html=True)
+    qc1.metric("Est. monthly rent", f"${est_rent:,.0f}",
+               f"at {yield_assumed*100:.1f}% gross yield", delta_color="off")
+    qc2.metric("Annual gross rent", f"${est_rent*12:,.0f}")
+    qc3.metric("Cash payback", f"{(pred / max(est_rent*12*0.8, 1)):.1f} yrs",
+               "net of 20% costs", delta_color="off")
 
     if diff_pct < -10:
-        st.markdown(
-            insight(
-                "PRICED BELOW SUBURB MEDIAN",
-                f"This configuration prices <b>{abs(diff_pct):.1f}%</b> below the {suburb} median. "
-                "If you can buy it at this price, you are getting in below the local benchmark.",
-            ),
-            unsafe_allow_html=True,
+        note(
+            f"This configuration prices <b>{abs(diff_pct):.1f}%</b> below the {suburb} "
+            f"median. If you can actually buy it at this price, you're getting in under "
+            f"the local benchmark — worth a closer look."
         )
     elif diff_pct > 10:
-        st.markdown(
-            insight(
-                "PRICED ABOVE SUBURB MEDIAN",
-                f"This configuration sits <b>{diff_pct:.1f}%</b> above the {suburb} median. "
-                "Make sure the features justify the premium — buyers in this suburb have alternatives.",
-            ),
-            unsafe_allow_html=True,
+        note(
+            f"This sits <b>{diff_pct:.1f}%</b> above the {suburb} median. Make sure the "
+            f"features genuinely justify the premium — buyers in this suburb have "
+            f"alternatives, and an over-priced listing tends to sit."
         )
     else:
-        st.markdown(
-            insight(
-                "ROUGHLY ON THE MARKET",
-                f"This sits within <b>±10%</b> of the {suburb} median — a market-rate price. "
-                "Negotiating room exists but don't expect a steal.",
-            ),
-            unsafe_allow_html=True,
+        note(
+            f"This lands within about <b>±10%</b> of the {suburb} median — a market-rate "
+            f"price. There's usually some room to negotiate, but don't expect a steal."
         )
