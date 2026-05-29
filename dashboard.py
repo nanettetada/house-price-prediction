@@ -53,11 +53,23 @@ SUBURBS = {
 }
 CBD_LAT, CBD_LON = -17.831, 31.045
 
-# A calm, professional palette — not the marketing-hero template look.
-INK = "#1f2933"
-MUTED = "#6b7280"
-ACCENT = "#2f7d4f"   # muted Harare green, used sparingly
+# ---- Fintech palette -------------------------------------------------------
+BRAND = "#16B364"      # emerald — money / property / growth
+BRAND2 = "#34D399"     # mint, for the hero gradient
+INK = "#16161D"
+MUTED = "#5B6172"
+BODY = "#5B6172"
+ACCENT = BRAND
+GOOD = "#16B364"
+WARN = "#FB8C00"
+BLUE = "#4C6FFF"
+GREY = "#9AA0AE"
+SOFT = "#F5F6FA"
+LINE = "#EEF0F4"
+FONT = "Manrope"
 PLOT_TEMPLATE = "plotly_white"
+GREEN_SCALE = ["#EAFBF1", "#A9EDC6", "#5FD898", "#16B364", "#0E8A4C"]
+TIER_COLORS = {"premium": BRAND, "upper-mid": BLUE, "middle": WARN, "township": GREY}
 
 st.set_page_config(
     page_title="Harare house prices",
@@ -66,24 +78,82 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+st.markdown(
+    f"""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+    html, body, [class*="css"], .stMarkdown, button, input, textarea {{
+        font-family: '{FONT}', system-ui, sans-serif;
+    }}
+    #MainMenu, header, footer {{ visibility: hidden; }}
+    .block-container {{ padding-top: 1.6rem; padding-bottom: 3rem; max-width: 1180px; }}
 
-def note(text: str) -> None:
-    """A quiet analyst's note — sentence-case, no shouting, woven into the page."""
+    .hero {{ background: linear-gradient(135deg, {BRAND} 0%, {BRAND2} 100%);
+        border-radius: 24px; padding: 26px 30px 22px 30px; color:#fff;
+        box-shadow: 0 18px 40px rgba(22,179,100,.26); }}
+    .hero .brand {{ font-size:14px; font-weight:700; opacity:.92; display:flex;
+        align-items:center; gap:8px; }}
+    .hero .dot {{ width:9px; height:9px; border-radius:50%; background:#fff; display:inline-block; }}
+    .hero .label {{ font-size:14px; opacity:.9; margin-top:18px; font-weight:600; }}
+    .hero .value {{ font-size:46px; font-weight:800; line-height:1.05; margin-top:2px; letter-spacing:-1px; }}
+    .hero .sub {{ font-size:15px; opacity:.95; margin-top:6px; max-width:660px; }}
+    .chips {{ display:flex; gap:10px; flex-wrap:wrap; margin-top:18px; }}
+    .chip {{ background: rgba(255,255,255,.18); border-radius:12px; padding:9px 14px; font-size:13px; }}
+    .chip b {{ font-size:17px; font-weight:800; display:block; }}
+
+    .callout {{ border-radius:16px; padding:15px 18px; margin:6px 0 20px 0;
+        font-size:15px; line-height:1.6; color:#3a3f4d; }}
+    .sec {{ margin: 26px 0 4px 0; }}
+    .sec h3 {{ font-size:20px; font-weight:800; color:{INK}; margin:0; }}
+    .sec p {{ font-size:14px; color:{BODY}; margin:3px 0 0 0; }}
+
+    /* native metrics styled as soft cards */
+    [data-testid="stMetric"] {{ background:#fff; border:1px solid #F0F1F5; border-radius:16px;
+        padding:14px 18px; box-shadow:0 1px 3px rgba(20,22,30,.05), 0 8px 22px rgba(20,22,30,.04); }}
+    [data-testid="stMetricValue"] {{ font-weight:800; color:{INK}; }}
+    [data-testid="stMetricLabel"] p {{ font-weight:600; color:{BODY}; }}
+
+    .stTabs [data-baseweb="tab-list"] {{ gap:6px; background:{SOFT}; padding:6px; border-radius:14px; }}
+    .stTabs [data-baseweb="tab"] {{ height:auto; padding:9px 20px; border-radius:10px;
+        font-weight:600; color:{BODY}; background:transparent; }}
+    .stTabs [aria-selected="true"] {{ background:#fff; color:{INK}; box-shadow:0 1px 3px rgba(0,0,0,.10); }}
+    .stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] {{ display:none; }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+def note(text: str, tone: str = "neutral") -> None:
+    bg = {"brand": "#EAF8F0", "good": "#E9FBF3", "warn": "#FFF6E9", "neutral": SOFT}[tone]
+    bar = {"brand": BRAND, "good": GOOD, "warn": WARN, "neutral": GREY}[tone]
     st.markdown(
-        f'<div style="border-left:3px solid #d7dbe0; background:#f7f8fa; '
-        f'padding:11px 16px; margin:4px 0 22px 0; color:#3a434d; '
-        f'font-size:15px; line-height:1.6;">{text}</div>',
+        f'<div class="callout" style="background:{bg};border-left:4px solid {bar};">{text}</div>',
         unsafe_allow_html=True,
     )
 
 
-def style_fig(fig, height=340):
+def section(title: str, sub: str | None = None) -> None:
+    st.markdown(
+        f'<div class="sec"><h3>{title}</h3>{f"<p>{sub}</p>" if sub else ""}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def style_fig(fig, height=340, legend=True):
     fig.update_layout(
         template=PLOT_TEMPLATE,
         height=height,
-        margin=dict(l=10, r=10, t=30, b=10),
-        font=dict(color=INK, size=13),
+        margin=dict(l=8, r=8, t=34, b=8),
+        font=dict(family=FONT, color=INK, size=13),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        showlegend=legend,
     )
+    if fig.layout.title.text:
+        fig.update_layout(title_font=dict(family=FONT, size=15, color=INK))
+    fig.update_xaxes(gridcolor=LINE, zeroline=False)
+    fig.update_yaxes(gridcolor=LINE, zeroline=False)
     return fig
 
 
@@ -149,35 +219,32 @@ median_ppsqm = float(df["price_per_sqm"].median())
 # --------------------------------------------------------------------------- #
 st.markdown(
     f"""
-    <div style="margin:-6px 0 6px 0;">
-      <div style="font-size:13px; letter-spacing:.8px; color:{MUTED};
-                  text-transform:uppercase;">Harare &middot; residential property</div>
-      <h1 style="margin:2px 0 4px 0; font-size:30px; font-weight:700; color:{INK};">
-        What a house costs across the city</h1>
-      <div style="font-size:16px; color:{MUTED};">
-        Mapping listings, comparing suburbs, and pricing a house — built on
-        location, size and the resilience features Harare buyers pay for.</div>
+    <div class="hero">
+      <div class="brand"><span class="dot"></span> Residential property &middot; Harare</div>
+      <div class="label">Median house price across the city</div>
+      <div class="value">${median_price:,.0f}</div>
+      <div class="sub">Built on {len(df):,} listings. Location is the whole story —
+        premium suburbs run about <b>{gap_x:.1f}×</b> what the townships do for a similar
+        amount of brick. Map it, compare suburbs, or price a specific house below.</div>
+      <div class="chips">
+        <span class="chip">listings <b>{len(df):,}</b></span>
+        <span class="chip">median $/m² <b>${median_ppsqm:,.0f}</b></span>
+        <span class="chip">model R² <b>{metrics['r2']:.2f}</b></span>
+        <span class="chip">premium vs township <b>{gap_x:.1f}×</b></span>
+      </div>
     </div>
     """,
     unsafe_allow_html=True,
 )
-st.divider()
-
-c1, c2, c3, c4, c5 = st.columns(5)
-c1.metric("Listings", f"{len(df):,}")
-c2.metric("Median price", f"${median_price:,.0f}")
-c3.metric("Median $/m²", f"${median_ppsqm:,.0f}")
-c4.metric("Model R²", f"{metrics['r2']:.3f}", f"RMSE ${metrics['rmse']:,.0f}",
-          delta_color="off")
-c5.metric("Premium / township gap", f"{gap_x:.1f}×",
-          f"${mean_premium:,.0f} vs ${mean_township:,.0f}", delta_color="off")
+st.write("")
 
 note(
-    f"The whole story of Harare prices is location. A typical premium-suburb house "
-    f"runs about <b>${mean_premium:,.0f}</b>, against <b>${mean_township:,.0f}</b> in "
-    f"the townships — roughly {gap_x:.1f}× the price for what's often a similar amount "
-    f"of brick. The map and suburb comparisons below pull that gap apart, and the "
-    f"predictor lets you price a specific house against its own neighbourhood."
+    f"A typical premium-suburb house runs about <b>${mean_premium:,.0f}</b>, against "
+    f"<b>${mean_township:,.0f}</b> in the townships — roughly {gap_x:.1f}× the price for "
+    f"what's often a similar amount of brick. The map and suburb comparisons below pull "
+    f"that gap apart, and the predictor lets you price a specific house against its own "
+    f"neighbourhood.",
+    tone="brand",
 )
 
 tab_market, tab_drivers, tab_price = st.tabs([
@@ -278,10 +345,7 @@ with tab_market:
             .sort_values("median_price", ascending=False)
         )
 
-        tier_color = {
-            "premium": "#27AE60", "upper-mid": "#3498DB",
-            "middle": "#F39C12", "township": "#95A5A6",
-        }
+        tier_color = TIER_COLORS
 
         col_a, col_b = st.columns(2)
         with col_a:
@@ -436,10 +500,7 @@ with tab_drivers:
     fig = px.box(
         df, x="price_usd", y="suburb", color="tier",
         category_orders={"suburb": order.tolist()},
-        color_discrete_map={
-            "premium": ACCENT, "upper-mid": "#5b8aa6",
-            "middle": "#c98a3a", "township": "#8a929b",
-        },
+        color_discrete_map=TIER_COLORS,
         labels={"price_usd": "Price (USD)", "suburb": ""},
     )
     fig.update_layout(xaxis_tickformat="$,.0f")
@@ -458,7 +519,7 @@ with tab_drivers:
 
     fig = px.bar(
         eff, x="uplift_%", y="feature", orientation="h",
-        color="uplift_%", color_continuous_scale="Greens",
+        color="uplift_%", color_continuous_scale=GREEN_SCALE,
         text=eff["uplift_%"].map(lambda x: f"+{x:.0f}%"),
         labels={"uplift_%": "Median uplift vs houses without"},
     )
@@ -480,10 +541,7 @@ with tab_drivers:
     fig = px.scatter(
         df.sample(min(2000, len(df)), random_state=RNG),
         x="size_sqm", y="price_usd", color="tier",
-        color_discrete_map={
-            "premium": ACCENT, "upper-mid": "#5b8aa6",
-            "middle": "#c98a3a", "township": "#8a929b",
-        },
+        color_discrete_map=TIER_COLORS,
         opacity=0.55, trendline="ols",
         labels={"size_sqm": "House size (m²)", "price_usd": "Price (USD)"},
     )
