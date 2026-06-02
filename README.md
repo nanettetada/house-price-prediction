@@ -3,6 +3,9 @@
 A residential price model and dashboard for Harare — 17 suburbs from Borrowdale to Budiriro, with the features that actually move the needle here (borehole, solar backup, walled yard, plot size, distance from the CBD).
 
 <p>
+  <a href="https://harare-property-prices.streamlit.app">
+    <img alt="Live demo" src="https://img.shields.io/badge/Open_dashboard-Live_demo-16794C?style=flat-square&logo=streamlit&logoColor=white" />
+  </a>
   <img alt="Python"   src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white" />
   <img alt="scikit-learn" src="https://img.shields.io/badge/scikit--learn-F7931E?style=flat-square&logo=scikit-learn&logoColor=white" />
   <img alt="Streamlit" src="https://img.shields.io/badge/Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white" />
